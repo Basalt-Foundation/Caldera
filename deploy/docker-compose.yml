@@ -1,0 +1,21 @@
+services:
+  caldera:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        NEXT_PUBLIC_BASALT_WS_URL: wss://testnet.basalt.foundation
+    container_name: basalt-caldera
+    environment:
+      - NEXT_PUBLIC_BASALT_API_URL=http://validator-0:5000
+    networks:
+      - basalt-testnet
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  basalt-testnet:
+    external: true

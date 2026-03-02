@@ -4,6 +4,7 @@ const API_URL =
   process.env.NEXT_PUBLIC_BASALT_API_URL || 'http://localhost:5100';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   async rewrites() {
     return [
