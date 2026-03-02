@@ -12,7 +12,7 @@ COPY . .
 
 # Baked into the build at build time (rewrites + client bundle)
 ARG NEXT_PUBLIC_BASALT_WS_URL=wss://testnet.basalt.foundation
-ARG NEXT_PUBLIC_BASALT_API_URL=http://validator-0:5000
+ARG NEXT_PUBLIC_BASALT_API_URL=http://rpc-0:5000
 ENV NEXT_PUBLIC_BASALT_WS_URL=$NEXT_PUBLIC_BASALT_WS_URL
 ENV NEXT_PUBLIC_BASALT_API_URL=$NEXT_PUBLIC_BASALT_API_URL
 
