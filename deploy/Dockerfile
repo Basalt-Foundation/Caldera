@@ -10,9 +10,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Baked into the client JS bundle at build time
+# Baked into the build at build time (rewrites + client bundle)
 ARG NEXT_PUBLIC_BASALT_WS_URL=wss://testnet.basalt.foundation
+ARG NEXT_PUBLIC_BASALT_API_URL=http://validator-0:5000
 ENV NEXT_PUBLIC_BASALT_WS_URL=$NEXT_PUBLIC_BASALT_WS_URL
+ENV NEXT_PUBLIC_BASALT_API_URL=$NEXT_PUBLIC_BASALT_API_URL
 
 RUN mkdir -p public && npm run build
 

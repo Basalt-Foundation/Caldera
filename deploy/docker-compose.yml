@@ -5,9 +5,8 @@ services:
       dockerfile: deploy/Dockerfile
       args:
         NEXT_PUBLIC_BASALT_WS_URL: wss://testnet.basalt.foundation
+        NEXT_PUBLIC_BASALT_API_URL: http://validator-0:5000
     container_name: basalt-caldera
-    environment:
-      - NEXT_PUBLIC_BASALT_API_URL=http://validator-0:5000
     networks:
       - basalt-testnet
     restart: unless-stopped
