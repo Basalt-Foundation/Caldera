@@ -14,7 +14,7 @@ COPY . .
 ARG NEXT_PUBLIC_BASALT_WS_URL=wss://testnet.basalt.foundation
 ENV NEXT_PUBLIC_BASALT_WS_URL=$NEXT_PUBLIC_BASALT_WS_URL
 
-RUN npm run build
+RUN mkdir -p public && npm run build
 
 # ── Stage 3: Runtime ───────────────────────────────────────────────
 FROM node:22-alpine AS runtime
