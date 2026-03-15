@@ -7,6 +7,11 @@ import { useTwap } from '@/hooks/useTwap';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { cn } from '@/lib/utils';
 
+// Hoist dynamic import to module level so it's cached across renders
+const chartModulePromise = typeof window !== 'undefined'
+  ? import('lightweight-charts')
+  : null;
+
 interface PriceChartProps {
   /** TWAP spot price as string (fallback when no history). */
   spotPrice: string | null;
@@ -100,7 +105,8 @@ export function PriceChart({ spotPrice, poolId, className }: PriceChartProps) {
 
     async function initChart() {
       try {
-        const { createChart, LineStyle } = await import('lightweight-charts');
+        if (!chartModulePromise) return;
+        const { createChart, LineStyle } = await chartModulePromise;
         if (disposed || !chartRef.current) return;
 
         const chart = createChart(chartRef.current, {
