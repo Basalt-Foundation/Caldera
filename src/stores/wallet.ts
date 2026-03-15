@@ -105,33 +105,36 @@ export const useWalletStore = create<WalletState & WalletActions>((set, get) => 
   },
 
   detectExtension: () => {
-    const provider = getProvider();
-    if (provider?.isBasalt) {
-      set({ extensionDetected: true });
-      // If already connected from a previous session, restore state
-      if (provider.connected && provider.accounts.length > 0) {
-        set({
-          address: provider.accounts[0],
-          isConnected: true,
-          source: 'extension',
-          isLocked: false,
-        });
-      }
-    } else if (typeof window !== 'undefined') {
-      // Extension might not be injected yet — listen for init event
-      const handler = () => {
-        const p = getProvider();
-        if (p?.isBasalt) {
-          set({ extensionDetected: true });
-          if (p.connected && p.accounts.length > 0) {
-            set({ address: p.accounts[0], isConnected: true, source: 'extension', isLocked: false });
-          }
+    if (typeof window === 'undefined') return;
+
+    const tryDetect = () => {
+      const provider = getProvider();
+      if (provider?.isBasalt) {
+        set({ extensionDetected: true });
+        if (provider.connected && provider.accounts.length > 0) {
+          set({ address: provider.accounts[0], isConnected: true, source: 'extension', isLocked: false });
         }
-      };
-      window.addEventListener('basalt#initialized', handler, { once: true });
-      // Clean up after 5s if extension never shows up
-      setTimeout(() => window.removeEventListener('basalt#initialized', handler), 5000);
-    }
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate check
+    if (tryDetect()) return;
+
+    // Listen for the initialization event (fires when inpage.js loads)
+    const handler = () => { tryDetect(); };
+    window.addEventListener('basalt#initialized', handler, { once: true });
+
+    // Poll as fallback — the event may have fired before this listener was registered
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      if (tryDetect() || attempts >= 10) {
+        clearInterval(poll);
+        window.removeEventListener('basalt#initialized', handler);
+      }
+    }, 500);
   },
 
   connectExtension: async () => {
