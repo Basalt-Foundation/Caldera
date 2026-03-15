@@ -1,30 +1,25 @@
 import { useWalletStore } from '@/stores/wallet';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Hook that provides wallet state and actions.
+ * Uses a single compound selector to minimize re-renders.
  */
 export function useWallet() {
-  const address = useWalletStore((s) => s.address);
-  const publicKey = useWalletStore((s) => s.publicKey);
-  const privateKey = useWalletStore((s) => s.privateKey);
-  const isLocked = useWalletStore((s) => s.isLocked);
-  const isConnected = useWalletStore((s) => s.isConnected);
-  const create = useWalletStore((s) => s.create);
-  const importKey = useWalletStore((s) => s.importKey);
-  const unlock = useWalletStore((s) => s.unlock);
-  const lock = useWalletStore((s) => s.lock);
-  const disconnect = useWalletStore((s) => s.disconnect);
-
-  return {
-    address,
-    publicKey,
-    privateKey,
-    isLocked,
-    isConnected,
-    create,
-    importKey,
-    unlock,
-    lock,
-    disconnect,
-  };
+  return useWalletStore(
+    useShallow((s) => ({
+      address: s.address,
+      publicKey: s.publicKey,
+      privateKey: s.privateKey,
+      isLocked: s.isLocked,
+      isConnected: s.isConnected,
+      source: s.source,
+      create: s.create,
+      importKey: s.importKey,
+      unlock: s.unlock,
+      lock: s.lock,
+      disconnect: s.disconnect,
+      connectExtension: s.connectExtension,
+    })),
+  );
 }

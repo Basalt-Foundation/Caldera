@@ -13,23 +13,31 @@ interface WalletModalProps {
 }
 
 export function WalletModal({ open, onOpenChange }: WalletModalProps) {
-  const { isConnected, address } = useWalletStore();
+  const { isConnected, address, source, extensionDetected } = useWalletStore();
 
   if (isConnected && address) {
     return (
       <Modal open={open} onOpenChange={onOpenChange} title="Wallet">
-        <ConnectedView address={address} onClose={() => onOpenChange(false)} />
+        <ConnectedView address={address} source={source} onClose={() => onOpenChange(false)} />
       </Modal>
     );
   }
 
   const keystoreExists = typeof window !== 'undefined' && hasKeystore();
-  const defaultTab = keystoreExists ? 'unlock' : 'create';
+  const defaultTab = extensionDetected ? 'extension' : keystoreExists ? 'unlock' : 'create';
 
   return (
     <Modal open={open} onOpenChange={onOpenChange} title="Wallet">
       <Tabs.Root defaultValue={defaultTab} className="w-full">
         <Tabs.List className="flex border-b border-border mb-4">
+          {extensionDetected && (
+            <Tabs.Trigger
+              value="extension"
+              className="flex-1 px-4 py-2 text-sm text-text-secondary hover:text-text-primary data-[state=active]:text-accent data-[state=active]:border-b-2 data-[state=active]:border-accent transition-colors"
+            >
+              Extension
+            </Tabs.Trigger>
+          )}
           <Tabs.Trigger
             value="create"
             className="flex-1 px-4 py-2 text-sm text-text-secondary hover:text-text-primary data-[state=active]:text-accent data-[state=active]:border-b-2 data-[state=active]:border-accent transition-colors"
@@ -52,6 +60,11 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
           )}
         </Tabs.List>
 
+        {extensionDetected && (
+          <Tabs.Content value="extension">
+            <ExtensionTab onSuccess={() => onOpenChange(false)} />
+          </Tabs.Content>
+        )}
         <Tabs.Content value="create">
           <CreateTab onSuccess={() => onOpenChange(false)} />
         </Tabs.Content>
@@ -74,9 +87,11 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
 
 function ConnectedView({
   address,
+  source,
   onClose,
 }: {
   address: string;
+  source: 'local' | 'extension' | null;
   onClose: () => void;
 }) {
   const { lock, disconnect } = useWalletStore();
@@ -100,6 +115,14 @@ function ConnectedView({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Source badge */}
+      <div className="flex justify-center">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
+          <span className="w-1.5 h-1.5 rounded-full bg-buy" />
+          {source === 'extension' ? 'Basalt Wallet Extension' : 'Local Wallet'}
+        </span>
+      </div>
+
       {/* Address display */}
       <div className="flex flex-col items-center gap-3 py-2">
         <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center">
@@ -123,13 +146,15 @@ function ConnectedView({
 
       {/* Actions */}
       <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={handleLock}
-          className="w-full py-2.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-surface-hover text-sm font-medium transition-colors"
-        >
-          Lock Wallet
-        </button>
+        {source === 'local' && (
+          <button
+            type="button"
+            onClick={handleLock}
+            className="w-full py-2.5 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-surface-hover text-sm font-medium transition-colors"
+          >
+            Lock Wallet
+          </button>
+        )}
         <button
           type="button"
           onClick={handleDisconnect}
@@ -138,6 +163,59 @@ function ConnectedView({
           Disconnect
         </button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Extension tab
+// ---------------------------------------------------------------------------
+
+function ExtensionTab({ onSuccess }: { onSuccess: () => void }) {
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const connectExtension = useWalletStore((s) => s.connectExtension);
+
+  async function handleConnect() {
+    setError('');
+    setLoading(true);
+    try {
+      await connectExtension();
+      onSuccess();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to connect');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 items-center py-4">
+      {/* Extension icon */}
+      <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="currentColor" className="text-accent/20" />
+          <text x="16" y="22" textAnchor="middle" fill="currentColor" fontSize="16" fontWeight="bold" className="text-accent">B</text>
+        </svg>
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm font-semibold text-text-primary">Basalt Wallet Extension</p>
+        <p className="text-xs text-text-secondary mt-1">
+          Connect your Basalt Wallet to trade securely. Your private keys never leave the extension.
+        </p>
+      </div>
+
+      {error && <p className="text-sm text-sell">{error}</p>}
+
+      <button
+        type="button"
+        onClick={handleConnect}
+        disabled={loading}
+        className="w-full py-3 rounded-lg bg-accent hover:bg-accent-hover text-background font-semibold transition-colors disabled:opacity-50"
+      >
+        {loading ? 'Connecting...' : 'Connect Extension'}
+      </button>
     </div>
   );
 }

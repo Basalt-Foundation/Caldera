@@ -8,7 +8,7 @@ import { WalletModal } from '@/components/wallet/WalletModal';
 export function WalletButton() {
   const [modalOpen, setModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { address, isConnected, isLocked, hydrate } = useWalletStore();
+  const { address, isConnected, isLocked, source, extensionDetected, hydrate } = useWalletStore();
 
   useEffect(() => {
     hydrate();
@@ -24,6 +24,8 @@ export function WalletButton() {
         ? 'Unlock Wallet'
         : 'Connect Wallet';
 
+  const showExtensionDot = mounted && isConnected && source === 'extension';
+
   return (
     <>
       <button
@@ -31,10 +33,13 @@ export function WalletButton() {
         onClick={() => setModalOpen(true)}
         className={
           isConnected && mounted
-            ? 'px-4 py-2 text-sm font-mono font-medium rounded-lg border border-border bg-surface hover:bg-surface-hover transition-colors text-text-primary'
+            ? 'relative px-4 py-2 text-sm font-mono font-medium rounded-lg border border-border bg-surface hover:bg-surface-hover transition-colors text-text-primary'
             : 'px-4 py-2 text-sm font-semibold rounded-lg bg-accent hover:bg-accent-hover transition-colors text-background'
         }
       >
+        {showExtensionDot && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-buy border-2 border-background" title="Basalt Wallet Extension" />
+        )}
         {label}
       </button>
       <WalletModal open={modalOpen} onOpenChange={setModalOpen} />
