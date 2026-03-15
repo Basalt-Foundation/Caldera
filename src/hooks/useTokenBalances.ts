@@ -179,7 +179,7 @@ export function useTokenBalances(
 
   const { data, error, isLoading, mutate } = useSWR<TokenBalance[]>(
     userAddress && tokens.length > 0
-      ? `token-balances:${userAddress}:${tokens.sort().join(',')}`
+      ? `token-balances:${userAddress}:${[...tokens].sort().join(',')}`
       : null,
     () => fetchAllBalances(tokens, userAddress!),
     {
