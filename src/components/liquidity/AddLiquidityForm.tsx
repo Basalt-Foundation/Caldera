@@ -7,7 +7,7 @@ import { TokenIcon } from '@/components/shared/TokenIcon';
 import { usePools } from '@/hooks/usePools';
 import { useAccount } from '@/hooks/useAccount';
 import { useTokenBalance } from '@/hooks/useTokenBalance';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useSettingsStore } from '@/stores/settings';
 import { useTransaction } from '@/hooks/useTransaction';
 import { TransactionType, buildAddLiquidity } from '@/lib/tx/builder';
@@ -25,7 +25,7 @@ import type { UnsignedTransaction } from '@/lib/tx/signer';
 export function AddLiquidityForm() {
   const { pools, isLoading: poolsLoading } = usePools();
   const address = useWalletStore((s) => s.address);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const isConnected = useWalletStore((s) => s.isConnected);
   const slippageBps = useSettingsStore((s) => s.slippageBps);
   const chainId = useSettingsStore((s) => s.chainId);
@@ -92,7 +92,7 @@ export function AddLiquidityForm() {
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedPool || !privateKey || !address || !amount0 || !amount1) return;
+    if (!selectedPool || !signer || !address || !amount0 || !amount1) return;
 
     const raw0 = parseTokenAmount(amount0);
     const raw1 = parseTokenAmount(amount1);
@@ -123,8 +123,8 @@ export function AddLiquidityForm() {
       chainId,
     };
 
-    await submit(unsignedTx, privateKey);
-  }, [selectedPool, privateKey, address, amount0, amount1, slippageBps, account, submit]);
+    await submit(unsignedTx, signer);
+  }, [selectedPool, signer, address, amount0, amount1, slippageBps, account, submit]);
 
   const insufficientBalance = useMemo(() => {
     if (!amount0 || !amount1) return null;

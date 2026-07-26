@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { AmountInput } from '@/components/shared/AmountInput';
 import { TokenIcon } from '@/components/shared/TokenIcon';
 import { usePools } from '@/hooks/usePools';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useSettingsStore } from '@/stores/settings';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransaction } from '@/hooks/useTransaction';
@@ -30,7 +30,7 @@ const RANGE_PRESETS = [
 export function ConcentratedRange() {
   const { pools } = usePools();
   const address = useWalletStore((s) => s.address);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const isConnected = useWalletStore((s) => s.isConnected);
   const chainId = useSettingsStore((s) => s.chainId);
   const { account } = useAccount(address ?? undefined);
@@ -64,7 +64,7 @@ export function ConcentratedRange() {
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedPool || !privateKey || !address || !amount0 || !amount1) return;
+    if (!selectedPool || !signer || !address || !amount0 || !amount1) return;
 
     const raw0 = parseTokenAmount(amount0);
     const raw1 = parseTokenAmount(amount1);
@@ -92,8 +92,8 @@ export function ConcentratedRange() {
       chainId,
     };
 
-    await submit(unsignedTx, privateKey);
-  }, [selectedPool, privateKey, address, tickLower, tickUpper, amount0, amount1, account, submit]);
+    await submit(unsignedTx, signer);
+  }, [selectedPool, signer, address, tickLower, tickUpper, amount0, amount1, account, submit]);
 
   const canSubmit = useMemo(() => {
     if (!isConnected || !selectedPool || !amount0 || !amount1) return false;

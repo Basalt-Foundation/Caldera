@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Modal } from '@/components/shared/Modal';
 import { useWalletStore } from '@/stores/wallet';
 import { hasKeystore } from '@/lib/crypto/keystore';
 import { formatAddress } from '@/lib/utils';
+import { hasExtension } from '@/lib/wallet/extension';
 
 interface WalletModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
 
   return (
     <Modal open={open} onOpenChange={onOpenChange} title="Wallet">
+      <ExtensionOption onConnected={() => onOpenChange(false)} />
       <Tabs.Root defaultValue={defaultTab} className="w-full">
         <Tabs.List className="flex border-b border-border mb-4">
           <Tabs.Trigger
@@ -330,5 +332,61 @@ function InputField({
         className="w-full px-3 py-2.5 rounded-lg bg-background border border-border text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none transition-colors"
       />
     </label>
+  );
+}
+
+/**
+ * Offered first, and only when the extension is actually there.
+ *
+ * Someone who already installed the Basalt Wallet has no reason to make a second one here, and the
+ * one made here lives in localStorage, which this page can read and the extension's cannot.
+ */
+function ExtensionOption({ onConnected }: { onConnected: () => void }) {
+  const connectExtension = useWalletStore((s) => s.connectExtension);
+  const [detected, setDetected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Read after mount. The provider is injected at document start, but this component also renders on
+  // the server, where there is no window at all.
+  useEffect(() => {
+    setDetected(hasExtension());
+  }, []);
+
+  if (!detected) return null;
+
+  const connect = async () => {
+    setConnecting(true);
+    setError(null);
+    try {
+      await connectExtension();
+      onConnected();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not connect');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  return (
+    <div className="mb-4">
+      <button
+        type="button"
+        onClick={connect}
+        disabled={connecting}
+        className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {connecting ? 'Check your wallet…' : 'Connect Basalt Wallet'}
+      </button>
+      <p className="mt-2 text-center text-xs text-text-secondary">
+        Your keys stay in the extension. This site never sees them.
+      </p>
+      {error && <p className="mt-2 text-center text-xs text-red-400">{error}</p>}
+      <div className="mt-4 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs text-text-secondary">or use a wallet stored in this browser</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+    </div>
   );
 }

@@ -9,6 +9,18 @@ import {
   type TransactionRequest,
 } from '@/lib/api/transactions';
 import type { ReceiptResponse } from '@/lib/types/api';
+import { getExtensionProvider } from '@/lib/wallet/extension';
+
+/**
+ * Who signs.
+ *
+ * Under 'extension' the wallet builds, signs and broadcasts, because it owns the nonce and the chain.
+ * Asking it only for a signature would produce one over its own nonce, which would not fit the
+ * transaction assembled here.
+ */
+export type SignerSource =
+  | { kind: 'local'; privateKey: Uint8Array }
+  | { kind: 'extension' };
 
 export type TransactionStatus =
   | 'idle'
@@ -21,7 +33,7 @@ export type TransactionStatus =
 interface UseTransactionReturn {
   submit: (
     tx: UnsignedTransaction,
-    privateKey: Uint8Array,
+    signer: SignerSource,
   ) => Promise<ReceiptResponse | null>;
   isLoading: boolean;
   error: string | null;
@@ -88,16 +100,34 @@ export function useTransaction(): UseTransactionReturn {
   const submit = useCallback(
     async (
       tx: UnsignedTransaction,
-      privateKey: Uint8Array,
+      signer: SignerSource,
     ): Promise<ReceiptResponse | null> => {
       try {
-        // Sign
         setStatus('signing');
         setError(null);
         setReceipt(null);
         setTxHash(null);
 
-        const { signature, publicKey } = signTransaction(tx, privateKey);
+        if (signer.kind === 'extension') {
+          const provider = getExtensionProvider();
+          if (!provider) throw new Error('Basalt Wallet is no longer available');
+
+          // The wallet prompts, signs and broadcasts. It sets the nonce and the chain itself, so what
+          // it needs from here is the intent: which kind of transaction, to whom, and with what data.
+          const { hash } = await provider.sendTransaction({
+            type: tx.type,
+            to: tx.to,
+            value: tx.value.toString(),
+            gasLimit: Number(tx.gasLimit),
+            data: tx.data.length > 0 ? bytesToHex(tx.data, true) : undefined,
+          });
+
+          setTxHash(hash);
+          setStatus('confirming');
+          return await pollForReceipt(hash);
+        }
+
+        const { signature, publicKey } = signTransaction(tx, signer.privateKey);
 
         // Submit
         setStatus('submitting');

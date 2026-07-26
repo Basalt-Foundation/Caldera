@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatTokenAmount } from '@/lib/format/amounts';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useSettingsStore } from '@/stores/settings';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransaction } from '@/hooks/useTransaction';
@@ -84,7 +84,7 @@ interface OrderRowProps {
 
 function OrderRow({ order, index }: OrderRowProps) {
   const walletAddress = useWalletStore((s) => s.address);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const chainId = useSettingsStore((s) => s.chainId);
   const { account } = useAccount(walletAddress ?? undefined);
   const { submit, isLoading } = useTransaction();
@@ -92,7 +92,7 @@ function OrderRow({ order, index }: OrderRowProps) {
   const isOwner = walletAddress?.toLowerCase() === order.owner.toLowerCase();
 
   const handleCancel = useCallback(async () => {
-    if (!privateKey || !walletAddress) return;
+    if (!signer || !walletAddress) return;
 
     const data = buildCancelOrder(BigInt(order.orderId));
 
@@ -111,8 +111,8 @@ function OrderRow({ order, index }: OrderRowProps) {
       chainId,
     };
 
-    await submit(unsignedTx, privateKey);
-  }, [privateKey, walletAddress, order, account, submit]);
+    await submit(unsignedTx, signer);
+  }, [signer, walletAddress, order, account, submit]);
 
   return (
     <motion.tr

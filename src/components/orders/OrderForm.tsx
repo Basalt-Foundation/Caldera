@@ -7,7 +7,7 @@ import { AmountInput } from '@/components/shared/AmountInput';
 import { TokenIcon } from '@/components/shared/TokenIcon';
 import { usePools } from '@/hooks/usePools';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useSettingsStore } from '@/stores/settings';
 import { useNetworkStore } from '@/stores/network';
 import { useAccount } from '@/hooks/useAccount';
@@ -26,7 +26,7 @@ import type { UnsignedTransaction } from '@/lib/tx/signer';
 export function OrderForm() {
   const { pools } = usePools();
   const address = useWalletStore((s) => s.address);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const isConnected = useWalletStore((s) => s.isConnected);
   const chainId = useSettingsStore((s) => s.chainId);
   const blockHeight = useNetworkStore((s) => s.blockHeight);
@@ -97,7 +97,7 @@ export function OrderForm() {
   }, [selectedPool, price, amount, isBuy, escrowBalance]);
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedPool || !privateKey || !address || !price || !amount) return;
+    if (!selectedPool || !signer || !address || !price || !amount) return;
 
     const priceRaw = parseTokenAmount(price);
     const priceScaled = (priceRaw * PRICE_SCALE) / 10n ** 18n;
@@ -127,8 +127,8 @@ export function OrderForm() {
       chainId,
     };
 
-    await submit(unsignedTx, privateKey);
-  }, [selectedPool, privateKey, address, price, amount, isBuy, expiryBlocks, blockHeight, account, submit]);
+    await submit(unsignedTx, signer);
+  }, [selectedPool, signer, address, price, amount, isBuy, expiryBlocks, blockHeight, account, submit]);
 
   const canSubmit = useMemo(() => {
     if (!isConnected || !selectedPool || !price || !amount || insufficientBalance) return false;

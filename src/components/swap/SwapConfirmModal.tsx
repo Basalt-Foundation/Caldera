@@ -9,7 +9,7 @@ import { PriceImpact } from '@/components/swap/PriceImpact';
 import { truncateAddress } from '@/lib/format/addresses';
 import { formatTokenAmount, parseTokenAmount } from '@/lib/format/amounts';
 import { useSettingsStore } from '@/stores/settings';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useNetworkStore } from '@/stores/network';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransaction } from '@/hooks/useTransaction';
@@ -53,7 +53,7 @@ export function SwapConfirmModal({
   const slippageBps = useSettingsStore((s) => s.slippageBps);
   const deadlineBlocks = useSettingsStore((s) => s.deadlineBlocks);
   const chainId = useSettingsStore((s) => s.chainId);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const walletAddress = useWalletStore((s) => s.address);
   const blockHeight = useNetworkStore((s) => s.blockHeight);
   const { account } = useAccount(walletAddress ?? undefined);
@@ -74,7 +74,7 @@ export function SwapConfirmModal({
   })();
 
   const handleConfirm = useCallback(async () => {
-    if (!privateKey || !walletAddress) {
+    if (!signer || !walletAddress) {
       setErrorMsg('Wallet is locked');
       setStep('error');
       return;
@@ -110,7 +110,7 @@ export function SwapConfirmModal({
       };
 
       setStep('submitting');
-      const receipt = await submit(unsignedTx, privateKey);
+      const receipt = await submit(unsignedTx, signer);
 
       if (receipt && receipt.success) {
         setStep('confirmed');
@@ -122,7 +122,7 @@ export function SwapConfirmModal({
       setErrorMsg(err instanceof Error ? err.message : 'Transaction failed');
       setStep('error');
     }
-  }, [privateKey, walletAddress, tokenIn, tokenOut, amountIn, minReceived, deadlineBlocks, blockHeight, account, submit]);
+  }, [signer, walletAddress, tokenIn, tokenOut, amountIn, minReceived, deadlineBlocks, blockHeight, account, submit]);
 
   const handleClose = (openState: boolean) => {
     if (!openState) {

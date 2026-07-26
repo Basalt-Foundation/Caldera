@@ -5,7 +5,7 @@ import { Minus, Loader2 } from 'lucide-react';
 import { AmountInput } from '@/components/shared/AmountInput';
 import { TokenIcon } from '@/components/shared/TokenIcon';
 import { usePools } from '@/hooks/usePools';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useSettingsStore } from '@/stores/settings';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransaction } from '@/hooks/useTransaction';
@@ -25,7 +25,7 @@ const PERCENTAGE_BUTTONS = [25, 50, 75, 100] as const;
 export function RemoveLiquidityForm() {
   const { pools } = usePools();
   const address = useWalletStore((s) => s.address);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const isConnected = useWalletStore((s) => s.isConnected);
   const slippageBps = useSettingsStore((s) => s.slippageBps);
   const chainId = useSettingsStore((s) => s.chainId);
@@ -77,7 +77,7 @@ export function RemoveLiquidityForm() {
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedPool || !privateKey || !address || !preview) return;
+    if (!selectedPool || !signer || !address || !preview) return;
 
     const shares = parseTokenAmount(lpAmount);
     const slippageMultiplier = BigInt(BPS_DENOMINATOR) - BigInt(slippageBps);
@@ -106,8 +106,8 @@ export function RemoveLiquidityForm() {
       chainId,
     };
 
-    await submit(unsignedTx, privateKey);
-  }, [selectedPool, privateKey, address, lpAmount, preview, slippageBps, account, submit]);
+    await submit(unsignedTx, signer);
+  }, [selectedPool, signer, address, lpAmount, preview, slippageBps, account, submit]);
 
   const canSubmit = useMemo(() => {
     if (!isConnected || !selectedPool || !preview) return false;

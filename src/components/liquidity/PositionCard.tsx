@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { TokenIcon } from '@/components/shared/TokenIcon';
 import { truncateAddress } from '@/lib/format/addresses';
 import { formatTokenAmount } from '@/lib/format/amounts';
-import { useWalletStore } from '@/stores/wallet';
+import { useSigner, useWalletStore } from '@/stores/wallet';
 import { useSettingsStore } from '@/stores/settings';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransaction } from '@/hooks/useTransaction';
@@ -34,7 +34,7 @@ export function PositionCard({
   className,
 }: PositionCardProps) {
   const address = useWalletStore((s) => s.address);
-  const privateKey = useWalletStore((s) => s.privateKey);
+  const signer = useSigner();
   const isConnected = useWalletStore((s) => s.isConnected);
   const chainId = useSettingsStore((s) => s.chainId);
   const { account } = useAccount(address ?? undefined);
@@ -42,7 +42,7 @@ export function PositionCard({
   const [action, setAction] = useState<'idle' | 'collect' | 'burn'>('idle');
 
   const handleCollectFees = useCallback(async () => {
-    if (!privateKey || !address) return;
+    if (!signer || !address) return;
     setAction('collect');
 
     try {
@@ -63,14 +63,14 @@ export function PositionCard({
         chainId,
       };
 
-      await submit(unsignedTx, privateKey);
+      await submit(unsignedTx, signer);
     } finally {
       setAction('idle');
     }
-  }, [privateKey, address, position, account, submit]);
+  }, [signer, address, position, account, submit]);
 
   const handleBurnPosition = useCallback(async () => {
-    if (!privateKey || !address) return;
+    if (!signer || !address) return;
     setAction('burn');
 
     try {
@@ -91,11 +91,11 @@ export function PositionCard({
         chainId,
       };
 
-      await submit(unsignedTx, privateKey);
+      await submit(unsignedTx, signer);
     } finally {
       setAction('idle');
     }
-  }, [privateKey, address, position, account, submit]);
+  }, [signer, address, position, account, submit]);
 
   const hasFees = position.token0Owed > 0n || position.token1Owed > 0n;
 
