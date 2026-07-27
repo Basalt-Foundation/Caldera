@@ -5,7 +5,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { ArrowLeft, CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
 import { getTransaction, getReceipt } from '@/lib/api/transactions';
-import { formatTokenAmount } from '@/lib/format/amounts';
+import { formatGasPrice, formatTokenAmount } from '@/lib/format/amounts';
 import { formatAddress } from '@/lib/utils';
 
 interface PageProps {
@@ -113,13 +113,13 @@ export default function TransactionPage({ params }: PageProps) {
         </Row>
         <Row label="Gas Price">
           <span className="text-sm font-mono text-text-primary">
-            {formatTokenAmount(tx.gasPrice, 18, 9)} BSLT
+            {formatGasPrice(tx.gasPrice)}
           </span>
         </Row>
         {tx.maxFeePerGas && (
           <Row label="Max Fee">
             <span className="text-sm font-mono text-text-primary">
-              {formatTokenAmount(tx.maxFeePerGas, 18, 9)} BSLT
+              {formatGasPrice(tx.maxFeePerGas)}
             </span>
           </Row>
         )}
@@ -139,7 +139,7 @@ export default function TransactionPage({ params }: PageProps) {
             </Row>
             <Row label="Effective Gas Price">
               <span className="text-sm font-mono text-text-primary">
-                {formatTokenAmount(receipt.effectiveGasPrice, 18, 9)} BSLT
+                {formatGasPrice(receipt.effectiveGasPrice)}
               </span>
             </Row>
           </>

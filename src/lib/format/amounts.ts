@@ -62,3 +62,21 @@ export function formatUsd(value: number): string {
     maximumFractionDigits: 2,
   }).format(value);
 }
+
+/**
+ * Formats a gas price without ever showing a nonzero amount as zero.
+ *
+ * Gas prices are tiny by nature: a base fee of 1 unit renders as 0.000000000 BSLT and gets trimmed to
+ * "0", so a receipt claimed the sender paid nothing when they had not. Below the point where BSLT can
+ * express it, the raw count of base units is shown instead, which is exact and cannot be mistaken for
+ * free.
+ */
+export function formatGasPrice(value: bigint | string, decimals: number = 18): string {
+  const raw = typeof value === 'string' ? BigInt(value) : value;
+  if (raw === 0n) return '0 BSLT';
+
+  const asToken = formatTokenAmount(raw, decimals, 9);
+  if (Number(asToken.replace(/[^0-9.]/g, '')) > 0) return `${asToken} BSLT`;
+
+  return `${raw.toLocaleString()} ${raw === 1n ? 'unit' : 'units'}`;
+}
